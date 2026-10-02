@@ -157,7 +157,15 @@ Every push and pull request is built on a clean Windows machine by [GitHub Actio
 
 ## Support
 
-The app is free and always will be. If it saved you some time, you can [buy me a coffee through GitHub Sponsors](https://github.com/sponsors/tugayilik) (the link is in the app's top bar too). Bug reports and pull requests help just as much.
+The app is free and always will be. If it saved you some time, you can [buy me a coffee through GitHub Sponsors](https://github.com/sponsors/tugayilik) (the link is in the app's top bar too). One-time, $3, $10 or $25, or any amount you like. Bug reports and pull requests help just as much.
+
+### Supporters
+
+Thank you to everyone who has supported the app. Sponsors of $25 or more who ask for it are listed here:
+
+<!-- Add one line per supporter: - Name (optional link) -->
+
+*Nobody yet — you could be first.*
 
 ## License
 
