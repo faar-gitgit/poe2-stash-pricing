@@ -155,6 +155,10 @@ Every push and pull request is built on a clean Windows machine by [GitHub Actio
 
 `tools\make-icon.ps1` redraws `src\app.ico`.
 
+## Support
+
+The app is free and always will be. If it saved you some time, you can [buy me a coffee through GitHub Sponsors](https://github.com/sponsors/tugayilik) (the link is in the app's top bar too). Bug reports and pull requests help just as much.
+
 ## License
 
 [MIT](LICENSE). Not affiliated with or endorsed by Grinding Gear Games or poe.ninja.

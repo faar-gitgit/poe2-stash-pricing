@@ -43,6 +43,7 @@ namespace PoeStashPricer
         DarkListView tabList, list;
         ThinProgress progress;
         DarkCheckBox chkHover;
+        Label lblSponsor;
 
         // Price on hover: the tab on screen, ready for the user's own mouse.
         HoverFrame frame;
@@ -62,7 +63,7 @@ namespace PoeStashPricer
             using (Graphics g = CreateGraphics()) dpi = g.DpiX / 96f;
             Text = "PoE2 Stash Pricer";
             Font = new Font("Segoe UI", 9f);
-            ClientSize = new Size(S(960), S(660));
+            ClientSize = new Size(S(1040), S(660));   // the top bar holds the total, the sponsor link and the league row
             MinimumSize = new Size(S(760), S(480));
             StartPosition = FormStartPosition.CenterScreen;
             MoveLearnedTabsToLayouts();
@@ -141,6 +142,8 @@ namespace PoeStashPricer
             // Row 1: stash total (left) and league / currency (right)
             Card hero = new Card { Hero = true, Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, S(12)), Padding = new Padding(S(18), S(12), S(18), S(12)) };
             TableLayoutPanel heroGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, BackColor = Color.Transparent, Margin = new Padding(0) };
+            heroGrid.ColumnCount = 3;   // total, the sponsor link centred in what's left, league / currency
+            heroGrid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             heroGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             heroGrid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             FlowLayoutPanel total = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Color.Transparent, Margin = new Padding(0) };
@@ -151,6 +154,8 @@ namespace PoeStashPricer
             totalCaption.BackColor = Color.Transparent;
             total.Controls.AddRange(new Control[] { totalCaption, lblGrand, lblGrandSub });
             heroGrid.Controls.Add(total, 0, 0);
+            lblSponsor = SponsorLink();
+            heroGrid.Controls.Add(lblSponsor, 1, 0);
 
             TableLayoutPanel prefs = new TableLayoutPanel { AutoSize = true, ColumnCount = 4, RowCount = 2, BackColor = Color.Transparent, Anchor = AnchorStyles.Right, Margin = new Padding(0) };
             cbLeague = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = S(200), Margin = new Padding(0, 0, S(8), 0) };
@@ -188,7 +193,16 @@ namespace PoeStashPricer
             btnUpdate.Padding = new Padding(S(10), 0, S(10), 0);
             btnUpdate.Visible = false;   // shown when GitHub has a newer release
             prefs.Controls.Add(btnUpdate, 3, 1);
-            heroGrid.Controls.Add(prefs, 1, 0);
+            heroGrid.Controls.Add(prefs, 2, 0);
+            // In a narrow window the top bar has no room for the sponsor link: the total and the league row come first.
+            TableLayoutPanel heroRow = heroGrid;
+            FlowLayoutPanel totalBlock = total;
+            TableLayoutPanel prefsBlock = prefs;
+            heroRow.SizeChanged += delegate
+            {
+                lblSponsor.Visible = heroRow.Width - totalBlock.PreferredSize.Width - prefsBlock.PreferredSize.Width
+                                     >= lblSponsor.MinimumSize.Width + S(24);
+            };
             hero.Controls.Add(heroGrid);
             root.Controls.Add(hero);
 
@@ -296,6 +310,30 @@ namespace PoeStashPricer
             lblStatus = new Label { AutoSize = true, ForeColor = Theme.Muted, Margin = new Padding(0, S(1), 0, 0) };
             r5.Controls.AddRange(new Control[] { progress, lblStatus });
             root.Controls.Add(r5);
+        }
+
+        const string SponsorUrl = "https://github.com/sponsors/tugayilik";
+
+        /// <summary>A line in the middle of the top bar for anyone who wants to support the app.</summary>
+        Label SponsorLink()
+        {
+            Label l = new Label
+            {
+                Text = "♥ Buy me a coffee",
+                AutoSize = true,
+                Font = new Font("Segoe UI Semibold", 10f),
+                ForeColor = Theme.GoldBright,
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.None,   // centred in the free space of the top bar
+                Margin = new Padding(S(12), 0, S(12), 0)
+            };
+            l.MinimumSize = new Size(TextRenderer.MeasureText(l.Text, l.Font).Width + S(4), 0);   // never wrapped onto two lines
+            new ToolTip().SetToolTip(l, "Opens " + SponsorUrl + " in your browser.");
+            l.MouseEnter += delegate { l.ForeColor = Color.White; };
+            l.MouseLeave += delegate { l.ForeColor = Theme.GoldBright; };
+            l.Click += delegate { try { System.Diagnostics.Process.Start(SponsorUrl); } catch { } };
+            return l;
         }
 
         void SetStatus(string s) { lblStatus.Text = s; }
