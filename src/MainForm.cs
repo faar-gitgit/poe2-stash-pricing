@@ -180,6 +180,7 @@ namespace PoeStashPricer
             leagueCaption.BackColor = showCaption.BackColor = Color.Transparent;
             prefs.Controls.Add(leagueCaption, 0, 0);
             prefs.Controls.Add(showCaption, 1, 0);
+            prefs.Controls.Add(SponsorLink(), 3, 0);
             prefs.Controls.Add(cbLeague, 0, 1);
             prefs.Controls.Add(cbCurrency, 1, 1);
             prefs.Controls.Add(btnRefresh, 2, 1);
@@ -296,6 +297,28 @@ namespace PoeStashPricer
             lblStatus = new Label { AutoSize = true, ForeColor = Theme.Muted, Margin = new Padding(0, S(1), 0, 0) };
             r5.Controls.AddRange(new Control[] { progress, lblStatus });
             root.Controls.Add(r5);
+        }
+
+        const string SponsorUrl = "https://github.com/sponsors/tugayilik";
+
+        /// <summary>A quiet line in the corner for anyone who wants to support the app. It costs nothing to ignore.</summary>
+        Label SponsorLink()
+        {
+            Label l = new Label
+            {
+                Text = "♥ Buy me a coffee",
+                AutoSize = true,
+                ForeColor = Theme.Muted,
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Right,
+                Margin = new Padding(S(8), 0, 0, S(2))
+            };
+            new ToolTip().SetToolTip(l, "Opens " + SponsorUrl + " in your browser.");
+            l.MouseEnter += delegate { l.ForeColor = Theme.GoldBright; };
+            l.MouseLeave += delegate { l.ForeColor = Theme.Muted; };
+            l.Click += delegate { try { System.Diagnostics.Process.Start(SponsorUrl); } catch { } };
+            return l;
         }
 
         void SetStatus(string s) { lblStatus.Text = s; }
