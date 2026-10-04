@@ -716,10 +716,10 @@ namespace PoeStashPricer
                             Rectangle cell = g.Rects[r, c];
                             int cx = cell.X + cell.Width / 2, cy = cell.Y + cell.Height / 2;
                             Native.MoveMouse(cx + 2, cy + 2);
-                            Thread.Sleep(30);
                             Native.MoveMouse(cx, cy);
-                            Thread.Sleep(likely ? Math.Max(90, cfg.HoverDelay * 2) : cfg.HoverDelay);
-                            string txt = CopyHovered(measured ? Math.Max(120, EmptySlotTimeout() * 2) : likely ? Math.Max(250, cfg.CopyTimeout) : cfg.CopyTimeout);
+                            // Reuse measured clipboard latency instead of doubling every retry deadline.
+                            Thread.Sleep(RetryTiming.HoverDelay(cfg.HoverDelay, measured));
+                            string txt = CopyHovered(RetryTiming.CopyTimeout(cfg.CopyTimeout, EmptySlotTimeout(), measured));
                             res.CellsRetried++;
                             if (txt == null) continue;
                             g.Texts[r, c] = txt;
