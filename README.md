@@ -170,3 +170,23 @@ Thank you to everyone who has supported the app. Sponsors of $25 or more who ask
 ## License
 
 [MIT](LICENSE). Not affiliated with or endorsed by Grinding Gear Games or poe.ninja.
+
+## Development: batch scanning and scan exports
+
+Open the first stash tab, set **Tabs to scan**, and press **F6** or **Scan all tabs**.
+The current tab counts as the first. The app sends Right Arrow between scans and
+confirms a visible header or content change before continuing. Press F6, F7, or
+Esc to stop. Losing game focus stops the batch. Choose the count carefully:
+folders and pages within special tabs require separate runs.
+
+Completed ordinary-tab scans are saved as independent JSON snapshots under
+`scan-exports` beside the executable. Batch runs save each completed tab in a
+separate numbered subdirectory, including multiple tabs of the same type.
+Snapshots include full copied item text, positions, quantities, league, and app
+version. Equipment exports do not add unpriced equipment to stash totals.
+Cancelled scans do not create completed snapshots; earlier completed tabs remain.
+If tab switching cannot be confirmed, local before/after images are saved for
+diagnosis. These files are not uploaded. The executable directory must be writable.
+
+Development versions containing a hyphen skip the upstream update check, so an
+experimental build is not replaced by a release that lacks its changes.

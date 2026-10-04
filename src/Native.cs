@@ -95,6 +95,13 @@ namespace PoeStashPricer
             SendInput((uint)seq.Length, seq, Marshal.SizeOf(typeof(INPUT)));
         }
 
+        public static void NextStashTab()
+        {
+            INPUT[] keys = { Key(0x27, false), Key(0x27, true) };
+            if (SendInput(2, keys, Marshal.SizeOf(typeof(INPUT))) != 2)
+                throw new InvalidOperationException("Could not send the next-tab key.");
+        }
+
         /// <summary>Moves the cursor with a real mouse-move event (games may ignore plain SetCursorPos).</summary>
         public static void MoveMouse(int x, int y)
         {
