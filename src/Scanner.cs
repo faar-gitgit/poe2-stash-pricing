@@ -329,10 +329,12 @@ namespace PoeStashPricer
                         bool dup = false;
                         foreach (Rectangle t in taken)
                         {
-                            // Overlapping more than a quarter of either rectangle = same spot.
+                            // In fixed-slot tabs, a stale learned rectangle can overlap a real slot
+                            // while its hover point sits outside it. Do not suppress that real slot.
                             Rectangle x = Rectangle.Intersect(t, rc);
                             double area = (double)x.Width * x.Height;
-                            if (area > 0.25 * Math.Min(t.Width * t.Height, rc.Width * rc.Height)) { dup = true; break; }
+                            if (area > 0.25 * Math.Min(t.Width * t.Height, rc.Width * rc.Height)
+                                && (!cfg.FixedLayout || rc.Contains(t.X + t.Width / 2, t.Y + t.Height / 2))) { dup = true; break; }
                         }
                         if (dup) g.Active[r, c] = false;
                         else taken.Add(rc);
