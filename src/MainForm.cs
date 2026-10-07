@@ -1614,7 +1614,8 @@ namespace PoeStashPricer
                         status = "No items found in this tab.";
                     if (learnedName != null) status += string.Format(" New tab learned as '{0}' (named after its items; use Rename to change it).", learnedName);
                     if (key == UnknownTab) status += archivePath != null
-                        ? " Scan exported (" + ScanArchive.Quality(tr, res) + "): " + archivePath + ". Not included in priced stash totals."
+                        ? (ScanArchive.Quality(tr, res) == "read-warnings" ? " Scan exported with read warnings: " : " Scan exported: ")
+                            + archivePath + ". Not included in priced stash totals."
                         : " Cancelled scan was not exported.";
                     int unread = res.Items.Count(i => i.CountUnread);
                     if (unread > 0)

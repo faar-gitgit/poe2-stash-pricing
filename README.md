@@ -203,8 +203,3 @@ remove them using File Explorer. There is no automatic retention limit. Close th
 app before removing leftover `.tmp` files. **Delete all** resets saved tab profiles,
 saved results and learned digits, but keeps these independent exports (as well as
 league/currency preferences). Remove `scan-exports` manually to erase export history.
-
-Development uses the existing Windows .NET Framework compiler (`build.ps1`) and
-Git for source history. Nix and Docker are unnecessary for this Windows desktop
-feature. Per-user snapshots are ordinary JSON files rather than a database or Git
-repository: they need independent local files, not queries or shared review history.
