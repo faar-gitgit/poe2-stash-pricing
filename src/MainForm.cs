@@ -1585,10 +1585,9 @@ namespace PoeStashPricer
                 string archivePath = null;
                 if (key == UnknownTab)
                 {
-                    string league = settings.League;
                     // Keep Stop responsive during serialization and disk writes. The final
                     // cancellation sample immediately before rename is the completion boundary.
-                    archivePath = await Task.Run(() => ScanArchive.SaveCompleted(tr, league, res,
+                    archivePath = await Task.Run(() => ScanArchive.SaveCompleted(tr, t, res,
                         () => sc.CancelRequested || Native.IsKeyDown(Native.VK_ESCAPE)));
                     if (archivePath == null) res.Aborted = true;
                 }

@@ -179,6 +179,11 @@ Recognized saved tabs keep their existing storage behavior. These independent
 exports do not add unpriced equipment to stash totals. No batch controls, tab
 navigation or additional hotkeys are involved.
 
+The exported league identifies the price table captured when the scan starts,
+also used for the scan value and price timestamp. If another league is selected
+while its prices are still loading, the export keeps the loaded pricing league;
+it does not identify the game character's league.
+
 Each snapshot includes full copied item text, relative positions and sizes,
 quantities (in item text or the saved count), unread-count flags, league, scan and
 price timestamps, app version and scan probe counters. `Quality` is `empty` when

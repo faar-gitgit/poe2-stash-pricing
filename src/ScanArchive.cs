@@ -19,7 +19,8 @@ namespace PoeStashPricer
             return result.Items.Count == 0 ? "empty" : "read";
         }
 
-        public static string SaveCompleted(TabResult result, string league, ScanResult scan,
+        // prices is the captured table used for result.ValueAtScan and result.PricesAtScan.
+        public static string SaveCompleted(TabResult result, PriceTable prices, ScanResult scan,
                                            Func<bool> cancelled, string directory = null)
         {
             if (scan.Aborted || cancelled()) return null;
@@ -32,7 +33,7 @@ namespace PoeStashPricer
                 Directory.CreateDirectory(directory);
                 string quality = Quality(result, scan);
                 var snapshot = new { SchemaVersion = 1, AppVersion = MainForm.Version,
-                    League = league, Complete = quality != "read-warnings", Quality = quality,
+                    League = prices.League, Complete = quality != "read-warnings", Quality = quality,
                     scan.CellsTried, scan.CellsCopied, scan.CellsRetried, scan.CellsRecovered,
                     Result = result };
                 string json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Serialize(snapshot);
