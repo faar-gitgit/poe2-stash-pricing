@@ -43,8 +43,6 @@ namespace PoeStashPricer
         /// <summary>The latest release if it is newer than this app, otherwise null. Throws on network errors.</summary>
         public static UpdateInfo Check()
         {
-            // Local development builds must not be replaced by an upstream binary without this patch.
-            if (MainForm.Version.Contains("-")) return null;
             Dictionary<string, object> rel = new JavaScriptSerializer().DeserializeObject(Encoding.UTF8.GetString(Get(LatestApi, 1024 * 1024, "application/vnd.github+json")))
                                              as Dictionary<string, object>;
             if (rel == null) return null;

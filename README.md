@@ -171,22 +171,40 @@ Thank you to everyone who has supported the app. Sponsors of $25 or more who ask
 
 [MIT](LICENSE). Not affiliated with or endorsed by Grinding Gear Games or poe.ninja.
 
-## Development: batch scanning and scan exports
+## Independent scan exports
 
-Open the first stash tab, set **Tabs to scan**, and press **F6** or **Scan all tabs**.
-The current tab counts as the first. The app sends Right Arrow between scans and
-confirms a visible header or content change before continuing. Press F6, F7, or
-Esc to stop. Losing game focus stops the batch. Choose the count carefully:
-folders and pages within special tabs require separate runs.
+A normal user-started scan of an otherwise-unsaved tab creates a new JSON file in
+`%APPDATA%\PoeStashPricer\scan-exports` (the existing per-user settings location).
+Recognized saved tabs keep their existing storage behavior. These independent
+exports do not add unpriced equipment to stash totals. No batch controls, tab
+navigation or additional hotkeys are involved.
 
-Completed ordinary-tab scans are saved as independent JSON snapshots under
-`scan-exports` beside the executable. Batch runs save each completed tab in a
-separate numbered subdirectory, including multiple tabs of the same type.
-Snapshots include full copied item text, positions, quantities, league, and app
-version. Equipment exports do not add unpriced equipment to stash totals.
-Cancelled scans do not create completed snapshots; earlier completed tabs remain.
-If tab switching cannot be confirmed, local before/after images are saved for
-diagnosis. These files are not uploaded. The executable directory must be writable.
+Each snapshot includes full copied item text, relative positions and sizes,
+quantities (in item text or the saved count), unread-count flags, league, scan and
+price timestamps, app version and scan probe counters. `Quality` is `empty` when
+no items or probes were found, `read` when no known read issue remains, or
+`read-warnings` when all attempted copies failed, no attempted item could be
+parsed, or counts were unread. Unfilled probes can be empty space: their counters
+are preserved without declaring them missing items. Warning snapshots have `Complete: false`; they preserve available
+items but must not be treated as a complete inventory. Even `read`/`empty` cannot
+prove the visual detector found every item. The scan status reports this quality.
 
-Development versions containing a hyphen skip the upstream update check, so an
-experimental build is not replaced by a release that lacks its changes.
+Writing uses a temporary file in the same directory, flushed and closed before
+atomic rename to `.json`. Stop requests received by the app (or Esc held down)
+are sampled immediately before that rename: cancellation at that boundary keeps
+no snapshot. Cancellation after the boundary does not retract a finished export.
+Write failures show an error with the destination. No final-name `.json` is
+published on a failed write. A crash or forced termination before publication can
+leave a `.json.tmp` file; it is not a completed export and is never auto-published.
+
+Exports contain game item text and metadata, not automatic diagnostic screenshots.
+They remain local; the app does not upload them. They persist until you manually
+remove them using File Explorer. There is no automatic retention limit. Close the
+app before removing leftover `.tmp` files. **Delete all** resets saved tab profiles,
+saved results and learned digits, but keeps these independent exports (as well as
+league/currency preferences). Remove `scan-exports` manually to erase export history.
+
+Development uses the existing Windows .NET Framework compiler (`build.ps1`) and
+Git for source history. Nix and Docker are unnecessary for this Windows desktop
+feature. Per-user snapshots are ordinary JSON files rather than a database or Git
+repository: they need independent local files, not queries or shared review history.

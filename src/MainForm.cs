@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 namespace PoeStashPricer
 {
-    public partial class MainForm : Form
+    public class MainForm : Form
     {
         const int HK_SCAN = 2, HK_OVERLAY = 3;
         const string UnknownTab = "_unknown";   // a scanned tab that isn't one of the saved ones
@@ -265,7 +265,7 @@ namespace PoeStashPricer
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             actions.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             FlowLayoutPanel main = Row();
-            main.WrapContents = true;
+            main.WrapContents = false;
             btnScan = Theme.Button(ScanButtonText(), delegate { StartScan(false); }, dpi, true);
             btnOverlay = B("Overlay  (" + OverlayKeyName + ")", delegate { ToggleOverlay(); });
             btnPreview = B("Preview", delegate { Preview(); });
@@ -286,12 +286,6 @@ namespace PoeStashPricer
                 UpdateOverlay(true);
             };
             main.Controls.AddRange(new Control[] { btnScan, btnOverlay, btnPreview, chkHover });
-            batchCount = new NumericUpDown { Minimum = 1, Maximum = 200, Value = Math.Max(1, Math.Min(200, settings.BatchTabCount)), Width = S(60) };
-            Theme.Style(batchCount);
-            batchCount.ValueChanged += delegate { settings.BatchTabCount = (int)batchCount.Value; settings.Save(); };
-            batchButton = B("Scan all tabs (F6)", delegate { StartBatch(false); });
-            main.Controls.AddRange(new Control[] { L("Tabs to scan:"), batchCount, batchButton });
-            new ToolTip().SetToolTip(batchButton, "Open your first stash tab, set the number of tabs, then start. F7 or Esc stops. Tabs inside folders and pages within special tabs need separate runs.");
             actions.Controls.Add(main, 0, 0);
 
             FlowLayoutPanel extra = Row();
@@ -490,7 +484,7 @@ namespace PoeStashPricer
 
         // ---------------------------------------------------------------- lifecycle / hotkeys
 
-        public const string Version = "1.5.0-dev.1+gc38f8d0";
+        public const string Version = "1.4.2";
         readonly List<string> hotkeyProblems = new List<string>();
 
         protected override void OnHandleCreated(EventArgs e)
@@ -500,7 +494,6 @@ namespace PoeStashPricer
             Log.Write("---- PoE2 Stash Pricer " + Version + " started | " + Environment.OSVersion + " | screen " + Screen.PrimaryScreen.Bounds.Size + " | dpi " + DeviceDpi);
             if (!Register(HK_SCAN, ScanKey)) hotkeyProblems.Add(ScanKeyName);
             if (!Register(HK_OVERLAY, OverlayKey)) hotkeyProblems.Add(OverlayKeyName);
-            if (!Register(4, Keys.F6)) hotkeyProblems.Add("F6 (scan all)");
             Log.Write(hotkeyProblems.Count == 0 ? "hotkeys " + ScanKeyName + " / " + OverlayKeyName + " registered" : "hotkeys NOT registered: " + string.Join(", ", hotkeyProblems.ToArray()));
         }
 
@@ -535,7 +528,6 @@ namespace PoeStashPricer
                 chosen = f.Result;
             }
             if (chosen == old) return;
-            if (chosen == Keys.F6) { MessageBox.Show(this, "F6 is reserved for scanning all tabs.", Text); return; }
             if (chosen == other)
             {
                 MessageBox.Show(this, Hotkeys.Name(chosen) + " is already used for " + (scan ? "the overlay" : "scanning") + ".", Text);
@@ -589,8 +581,6 @@ namespace PoeStashPricer
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            StopBatch();
-            Native.UnregisterHotKey(Handle, 4);
             if (scanner != null) scanner.CancelRequested = true;
             Native.UnregisterHotKey(Handle, HK_SCAN);
             Native.UnregisterHotKey(Handle, HK_OVERLAY);
@@ -607,7 +597,6 @@ namespace PoeStashPricer
                 {
                     case HK_SCAN: StartScan(true); break;
                     case HK_OVERLAY: ToggleOverlay(); break;
-                    case 4: StartBatch(true); break;
                 }
                 return;
             }
@@ -633,7 +622,7 @@ namespace PoeStashPricer
         void WatchTick(object sender, EventArgs e)
         {
             AutoRefreshPrices();
-            if (busy || batchRunning) return;
+            if (busy) return;
             try
             {
                 UpdateOverlay(false);   // e.g. the game lost or regained focus
@@ -875,7 +864,7 @@ namespace PoeStashPricer
 
         async void HoverTick(object sender, EventArgs e)
         {
-            if (!settings.HoverPrices || frame == null || busy || batchRunning || copying) return;
+            if (!settings.HoverPrices || frame == null || busy || copying) return;
             if (!stashVisible || !Native.IsGameWindow(Native.GetForegroundWindow())) { lastSlot = Rectangle.Empty; return; }
             try
             {
@@ -1447,7 +1436,7 @@ namespace PoeStashPricer
         {
             if (busy) return;
             if (MessageBox.Show(this,
-                    "Delete all saved tabs, scan results and learned digits?\n\nThe app starts over as if freshly installed; tabs are learned again on their first scan (" + ScanKeyName + "). Your league and currency choices are kept.",
+                    "Delete all saved tabs, scan results and learned digits?\n\nThe app starts over as if freshly installed; tabs are learned again on their first scan (" + ScanKeyName + "). Your league and currency choices and independent scan exports are kept.",
                     Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             try
             {
@@ -1469,7 +1458,7 @@ namespace PoeStashPricer
             overlay.ClearContent();
             overlayState = "hidden";
             RefreshAll();
-            SetStatus("Everything deleted. Tabs are learned again on their first scan (" + ScanKeyName + ").");
+            SetStatus("Saved tabs, results and digits deleted; independent scan exports kept. Tabs are learned again on their first scan (" + ScanKeyName + ").");
         }
 
         void DeleteSelectedTab()
@@ -1532,19 +1521,12 @@ namespace PoeStashPricer
 
         async void StartScan(bool fromHotkey)
         {
-            if (batchRunning) { StopBatch(); return; }
-            await ScanOnce(fromHotkey);
-        }
-
-        async Task ScanOnce(bool fromHotkey)
-        {
-            lastScanCompleted = false;
             if (busy)
             {
                 if (scanner != null) scanner.CancelRequested = true;
                 return;
             }
-            if (settings.HoverPrices && !batchRunning) { ArmFromGame(fromHotkey); return; }
+            if (settings.HoverPrices) { ArmFromGame(fromHotkey); return; }
             PriceTable t = table;
             if (t == null) { SetStatus("Prices are not loaded yet, please wait a moment."); return; }
             IntPtr game = await GetGame(fromHotkey);
@@ -1600,12 +1582,16 @@ namespace PoeStashPricer
                 TabResult tr = ResultStore.FromScan(key, res, cfg.Region);
                 tr.ValueAtScan = ResultStore.Total(tr, t);
                 tr.PricesAtScan = t.LoadedAt;
-                string archivePath = key == UnknownTab || batchRunning
-                    ? ScanArchive.SaveCompleted(tr, settings.League, res.Aborted,
-                        batchRunning ? batchDirectory : System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scan-exports"))
-                    : null;
-                lastScanCompleted = !res.Aborted;
-                lastScanRegion = cfg.Region;
+                string archivePath = null;
+                if (key == UnknownTab)
+                {
+                    string league = settings.League;
+                    // Keep Stop responsive during serialization and disk writes. The final
+                    // cancellation sample immediately before rename is the completion boundary.
+                    archivePath = await Task.Run(() => ScanArchive.SaveCompleted(tr, league, res,
+                        () => sc.CancelRequested || Native.IsKeyDown(Native.VK_ESCAPE)));
+                    if (archivePath == null) res.Aborted = true;
+                }
                 if (res.Aborted && ResultFor(key) != null)
                 {
                     SetStatus("Scan stopped; the previous result of this tab was kept.");
@@ -1628,8 +1614,8 @@ namespace PoeStashPricer
                         status = "No items found in this tab.";
                     if (learnedName != null) status += string.Format(" New tab learned as '{0}' (named after its items; use Rename to change it).", learnedName);
                     if (key == UnknownTab) status += archivePath != null
-                        ? " Equipment scan exported to: " + archivePath + ". Not included in priced stash totals."
-                        : " Incomplete equipment scan was not exported.";
+                        ? " Scan exported (" + ScanArchive.Quality(tr, res) + "): " + archivePath + ". Not included in priced stash totals."
+                        : " Cancelled scan was not exported.";
                     int unread = res.Items.Count(i => i.CountUnread);
                     if (unread > 0)
                         status += string.Format(" The count of {0} items could not be read from the screen (shown with \"?\", counted as 1). Digits are learned while scanning (known: {1}); scan other tabs, then rescan this one.",
@@ -1640,7 +1626,6 @@ namespace PoeStashPricer
             catch (Exception ex)
             {
                 Log.Write("scan error: " + ex);
-                lastScanCompleted = false;
                 Problem("Scan error: " + ex.Message, null);
             }
             finally
