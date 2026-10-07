@@ -329,12 +329,15 @@ namespace PoeStashPricer
                         bool dup = false;
                         foreach (Rectangle t in taken)
                         {
-                            // In fixed-slot tabs, a stale learned rectangle can overlap a real slot
-                            // while its hover point sits outside it. Do not suppress that real slot.
+                            // A learned fixed-slot position may overlap a detected single item by
+                            // 25-30%: enough to suppress it here, but not to snap to it above.
+                            // Keep that item's probe if the earlier hover misses it. Preserve the
+                            // overlap policy for saved positions, lattice and split-area probes.
                             Rectangle x = Rectangle.Intersect(t, rc);
                             double area = (double)x.Width * x.Height;
                             if (area > 0.25 * Math.Min(t.Width * t.Height, rc.Width * rc.Height)
-                                && (!cfg.FixedLayout || rc.Contains(t.X + t.Width / 2, t.Y + t.Height / 2))) { dup = true; break; }
+                                && (!(cfg.FixedLayout && known != null && g.Priority == 0)
+                                    || rc.Contains(t.X + t.Width / 2, t.Y + t.Height / 2))) { dup = true; break; }
                         }
                         if (dup) g.Active[r, c] = false;
                         else taken.Add(rc);
